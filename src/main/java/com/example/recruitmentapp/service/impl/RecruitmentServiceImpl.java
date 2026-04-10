@@ -11,6 +11,7 @@ import com.example.recruitmentapp.entity.Recruitment;
 import com.example.recruitmentapp.entity.RecruitmentQuestion;
 import com.example.recruitmentapp.entity.RecruitmentStage;
 import com.example.recruitmentapp.entity.RecruitmentStageScoreTemplate;
+import com.example.recruitmentapp.exception.BusinessConflictException;
 import com.example.recruitmentapp.exception.ResourceNotFoundException;
 import com.example.recruitmentapp.mapper.RecruitmentMapper;
 import com.example.recruitmentapp.repository.ProfileQuestionTemplateRepository;
@@ -85,12 +86,22 @@ public class RecruitmentServiceImpl implements RecruitmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Recruitment not found with id: " + id));
 
         List<RecruitmentStage> existingStages = recruitmentStageRepository.findByRecruitmentIdOrderByDisplayOrder(id);
-        for (RecruitmentStage stage : existingStages) {
-            recruitmentQuestionRepository.deleteByRecruitmentStageId(stage.getId());
-            recruitmentStageScoreTemplateRepository.deleteByStageId(stage.getId());
-        }
         if (!existingStages.isEmpty()) {
-            recruitmentStageRepository.deleteAll(existingStages);
+            int existingQuestions = existingStages.stream()
+                    .map(stage -> recruitmentQuestionRepository.findByRecruitmentStageIdOrderByDisplayOrder(stage.getId()).size())
+                    .reduce(0, Integer::sum);
+            int existingScoreTemplates = existingStages.stream()
+                    .map(stage -> recruitmentStageScoreTemplateRepository.findByStageIdOrderByDisplayOrder(stage.getId()).size())
+                    .reduce(0, Integer::sum);
+
+            return RecruitmentInitializationResponse.builder()
+                    .recruitmentId(id)
+                    .stagesCreated(existingStages.size())
+                    .questionsCreated(existingQuestions)
+                    .scoreTemplatesCreated(existingScoreTemplates)
+                    .initialized(false)
+                    .message("Recruitment already initialized. No changes were applied to avoid data conflicts.")
+                    .build();
         }
 
         int stagesCount = 0;
@@ -99,6 +110,9 @@ public class RecruitmentServiceImpl implements RecruitmentService {
 
         List<ProfileStageTemplate> stageTemplates = profileStageTemplateRepository
                 .findByProfileIdOrderByDisplayOrder(recruitment.getProfile().getId());
+        if (stageTemplates.isEmpty()) {
+            throw new BusinessConflictException("Cannot initialize recruitment: profile has no stage templates.");
+        }
 
         for (ProfileStageTemplate stageTemplate : stageTemplates) {
             RecruitmentStage stage = RecruitmentStage.builder()
@@ -145,6 +159,8 @@ public class RecruitmentServiceImpl implements RecruitmentService {
                 .stagesCreated(stagesCount)
                 .questionsCreated(questionsCount)
                 .scoreTemplatesCreated(scoreTemplatesCount)
+                .initialized(true)
+                .message("Recruitment initialized from profile templates.")
                 .build();
     }
 }

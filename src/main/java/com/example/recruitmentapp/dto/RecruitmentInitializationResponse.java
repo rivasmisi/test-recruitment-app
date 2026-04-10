@@ -14,4 +14,6 @@ public class RecruitmentInitializationResponse {
     private Integer stagesCreated;
     private Integer questionsCreated;
     private Integer scoreTemplatesCreated;
+    private Boolean initialized;
+    private String message;
 }

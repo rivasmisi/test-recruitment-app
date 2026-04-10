@@ -83,6 +83,7 @@ Resources:
 
 Additional process endpoint:
 - `POST /api/recruitments/{id}/initialize-from-profile` - clones profile catalog templates into runtime recruitment stages, questions, and score templates.
+  - Non-destructive behavior: if a recruitment is already initialized, it returns current counts and does not overwrite runtime data.
 
 ## Notes
 - No Spring Security/authentication/authorization is implemented.
@@ -101,5 +102,6 @@ Additional process endpoint:
 4. Create a recruitment linked to that profile (`/api/recruitments`).
 5. Initialize recruitment runtime structure from the profile catalog:
    `POST /api/recruitments/{id}/initialize-from-profile`.
+   - If called again, the endpoint responds without mutating existing runtime stages/questions/score templates.
 6. Add applications (`/api/applications`).
 7. Add application files and application scores as the process advances.

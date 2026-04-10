@@ -7,6 +7,4 @@ import java.util.List;
 
 public interface RecruitmentQuestionRepository extends JpaRepository<RecruitmentQuestion, Integer> {
     List<RecruitmentQuestion> findByRecruitmentStageIdOrderByDisplayOrder(Integer recruitmentStageId);
-
-    void deleteByRecruitmentStageId(Integer recruitmentStageId);
 }

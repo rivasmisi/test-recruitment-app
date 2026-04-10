@@ -7,6 +7,4 @@ import java.util.List;
 
 public interface RecruitmentStageScoreTemplateRepository extends JpaRepository<RecruitmentStageScoreTemplate, Integer> {
     List<RecruitmentStageScoreTemplate> findByStageIdOrderByDisplayOrder(Integer stageId);
-
-    void deleteByStageId(Integer stageId);
 }
